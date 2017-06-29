@@ -1,0 +1,1517 @@
+   1 0000               # Filename:	    peg_puzzle.asm
+   2 0000               # Author:	    Tousif Chowdhury 
+   3 0000               # Description	    Plays the game of peg solitaire. Takes user input 
+   4 0000               #		    to pick a piece, and then where to move it to 
+   5 0000               #		    Player plays until there is no other moves to make 
+   6 0000               
+   7 0000               #################################
+   8 0000               ####### Constants ###############
+   9 0000               #################################
+  10 0000               PRINT_INT = 1 
+  11 0000               PRINT_STRING = 4 
+  12 0000               READ_INT = 5 
+  13 0000               END_PROGRAM = 10 
+  14 0000               PRINT_CHAR = 11 
+  15 0000               
+  16 0000                   .data
+  17 0000                   .globl main 
+  18 0000                   .align 0 
+  19 0000               					
+  20 0000               board_array: 
+  21 0000 20205858		.ascii "  XXX    XXX  XXXXXXXXXX XXXXXXXXXX  XXX    XXX  "
+          58202020
+          20585858
+          20205858
+          58585858
+          58585858
+  22 0031               
+  23 0031               forbiden_piece:
+  24 0031 5F00    		.asciiz "_"
+  25 0033               
+  26 0033               peg_pieces: 
+  27 0033 5800    		.asciiz "X"
+  28 0035               
+  29 0035               empty_piece: 
+  30 0035 2000    		.asciiz " "
+  31 0037               
+  32 0037               real_empty_space:
+  33 0037 20      		.ascii " "
+  34 0038               
+  35 0038               new_line: 
+  36 0038 0A00    		.asciiz "\n"
+  37 003a               
+  38 003a               welcome_banner:
+  39 003a 2020202A		.ascii "   ************************\n"
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+  40 0056 2020202A		.ascii "   **     Peg Puzzle     **\n"
+          2A202020
+          20205065
+          67205075
+          7A7A6C65
+          20202020
+  41 0072 2020202A		.asciiz "   ************************\n"
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+  42 008f               
+  43 008f               board_top_row: 
+  44 008f 20202020		.asciiz	    "    0  1  2  3  4  5  6   \n"
+          30202031
+          20203220
+          20332020
+          34202035
+          20203620
+  45 00ab               
+  46 00ab               top_wall:
+  47 00ab 20202020		.asciiz	    "        +---------+\n"
+          20202020
+          2B2D2D2D
+          2D2D2D2D
+          2D2D2B0A
+          00      
+  48 00c0               
+  49 00c0               begin_row_0:		    
+  50 00c0 30202020		.asciiz	    "0       |"
+          20202020
+          7C00    
+  51 00ca               
+  52 00ca               begin_row_1: 
+  53 00ca 31202B2D		.asciiz	    "1 +-----+"
+          2D2D2D2D
+          2B00    
+  54 00d4               
+  55 00d4               begin_row_2:
+  56 00d4 32207C00		.asciiz	    "2 |"
+  57 00d8               
+  58 00d8               begin_row_3:
+  59 00d8 33207C00		.asciiz	    "3 |"
+  60 00dc               
+  61 00dc               begin_row_4:
+  62 00dc 34207C00		.asciiz	    "4 |"
+  63 00e0               
+  64 00e0               begin_row_5:
+  65 00e0 35202B2D		.asciiz	    "5 +-----+"
+          2D2D2D2D
+          2B00    
+  66 00ea               
+  67 00ea               begin_row_6:
+  68 00ea 36202020		.asciiz	    "6       |"
+          20202020
+          7C00    
+  69 00f4               
+  70 00f4               end_row:
+  71 00f4 7C0A00  		.asciiz	    "|\n"
+  72 00f7               
+  73 00f7               end_wall_row:
+  74 00f7 2B2D2D2D	    	.asciiz	    "+-----+\n"
+          2D2D2B0A
+          00      
+  75 0100               
+  76 0100               player_quit_message:
+  77 0100 506C6179		.asciiz "Player quit."
+          65722071
+          7569742E
+          00      
+  78 010d               
+  79 010d               enter_peg_to_move_location: 
+  80 010d 456E7465		.asciiz "Enter the location of the peg to move (RC, -1 to quit): "
+          72207468
+          65206C6F
+          63617469
+          6F6E206F
+          66207468
+  81 0146               
+  82 0146               enter_location_to_move_peg:
+  83 0146 456E7465		.asciiz "Enter the location where the peg is moving to (RC, -1 to quit): "
+          72207468
+          65206C6F
+          63617469
+          6F6E2077
+          68657265
+  84 0187               
+  85 0187               illegal_not_on_board:
+  86 0187 496C6C65		.asciiz "Illegal location.\n"
+          67616C20
+          6C6F6361
+          74696F6E
+          2E0A00  
+  87 019a               
+  88 019a               illegal_no_peg:
+  89 019a 496C6C65		.asciiz "Illegal move, no peg at source location.\n"
+          67616C20
+          6D6F7665
+          2C206E6F
+          20706567
+          20617420
+  90 01c4               
+  91 01c4               illegal_move_occupied:
+  92 01c4 496C6C65		.asciiz "Illegal move, destination location is occupied.\n"
+          67616C20
+          6D6F7665
+          2C206465
+          7374696E
+          6174696F
+  93 01f5               
+  94 01f5               illegal_move_jump_only_one_peg:
+  95 01f5 496C6C65		.asciiz "Illegal move, can only jump over one peg, re-enter move.\n"
+          67616C20
+          6D6F7665
+          2C206361
+          6E206F6E
+          6C79206A
+  96 022f               
+  97 022f               illegal_move_no_middle_peg:
+  98 022f 496C6C65		.asciiz "Illegal move, no peg, being jumped over, re-enter move.\n"
+          67616C20
+          6D6F7665
+          2C206E6F
+          20706567
+          2C206265
+  99 0268               you_have:
+ 100 0268 0A596F75		.asciiz "\nYou left "
+          206C6566
+          742000  
+ 101 0273               pegs_on_board_left:
+ 102 0273 20706567		.asciiz " pegs on the board.\n"
+          73206F6E
+          20746865
+          20626F61
+          72642E0A
+          00      
+ 103 0288               no_more_legal_moves:
+ 104 0288 54686572		.asciiz "There are no more legal moves."
+          65206172
+          65206E6F
+          206D6F72
+          65206C65
+          67616C20
+ 105 02a7               
+ 106 0000                   .text 
+ 107 0000               
+ 108 0000               #
+ 109 0000               # Name:		    MAIN PROGRAM
+ 110 0000               # Description:	    Main logic for the program
+ 111 0000               #		    
+ 112 0000               #		    Prints the banners, asks user for inputs,
+ 113 0000               #		    loops and plays game until game is over
+ 114 0000               main: 
+ 115 0000 34020004		li     $v0, PRINT_STRING  
+ 116 0004 3C040000		la     $a0, welcome_banner
+     0008 34840000
+ 117 000c 0000000C		syscall	    
+ 118 0010                
+ 119 0010 0C0002B0		jal    print_whole_board
+ 120 0014               
+ 121 0014 34020004		li     $v0, PRINT_STRING
+ 122 0018 3C040000		la     $a0, new_line
+     001c 34840000
+ 123 0020 0000000C		syscall
+ 124 0024               
+ 125 0024 0C000029		jal    play_game	
+ 126 0028               
+ 127 0028 3402000A		li     $v0, END_PROGRAM 
+ 128 002c 0000000C		syscall
+ 129 0030               
+ 130 0030               #
+ 131 0030               # Name:		    Player Quit Game 
+ 132 0030               # Description	    Function that ends the game and displays 
+ 133 0030               #		    number of pegs left on board 
+ 134 0030               #
+ 135 0030               player_quit_game:
+ 136 0030 23BDFFFC		addi   $sp, $sp, -4
+ 137 0034 AFBF0000		sw     $ra, 0($sp)
+ 138 0038               
+ 139 0038 34020004		li     $v0, PRINT_STRING 
+ 140 003c 3C040000		la     $a0, player_quit_message
+     0040 34840000
+ 141 0044 0000000C		syscall 
+ 142 0048               	
+ 143 0048 0C000018		jal    print_number_of_pegs
+ 144 004c               
+ 145 004c 3402000A		li     $v0, END_PROGRAM 
+ 146 0050 0000000C		syscall
+ 147 0054               
+ 148 0054 8FBF0000		lw     $ra, 0($sp)
+ 149 0058 23BDFFFC		addi   $sp, $sp, -4 
+ 150 005c 03E00008		jr     $ra 
+ 151 0060               
+ 152 0060               print_number_of_pegs:
+ 153 0060 23BDFFFC	    	addi   $sp, $sp, -4
+ 154 0064 AFBF0000		sw     $ra, 0($sp) 
+ 155 0068               	
+ 156 0068 34020004		li     $v0, PRINT_STRING
+ 157 006c 3C040000		la     $a0, you_have
+     0070 34840000
+ 158 0074 0000000C		syscall	    
+ 159 0078               
+ 160 0078 0C00004E		jal    count_board
+ 161 007c 00402021		move   $a0, $v0
+ 162 0080 34020001		li     $v0, PRINT_INT
+ 163 0084 0000000C		syscall
+ 164 0088               
+ 165 0088 34020004	    	li     $v0, PRINT_STRING
+ 166 008c 3C040000		la     $a0, pegs_on_board_left
+     0090 34840000
+ 167 0094 0000000C		syscall	    
+ 168 0098               
+ 169 0098 8FBF0000		lw     $ra, 0($sp)
+ 170 009c 23BD0004		addi   $sp, $sp, 4 
+ 171 00a0 03E00008		jr     $ra 
+ 172 00a4               
+ 173 00a4               #
+ 174 00a4               # Name:		    Play Games   
+ 175 00a4               # Description:	    Function to play the game 
+ 176 00a4               #
+ 177 00a4               play_game:
+ 178 00a4 23BDFFF0		addi   $sp, $sp, -16
+ 179 00a8 AFBF000C		sw     $ra, 12($sp)
+ 180 00ac AFB20008		sw     $s2, 8($sp)
+ 181 00b0 AFB10004		sw     $s1, 4($sp)
+ 182 00b4 AFB00000		sw     $s0, 0($sp)
+ 183 00b8               
+ 184 00b8               get_input:
+ 185 00b8 0C00006A		jal    user_inputs_peg_location	     #get user inputs
+ 186 00bc 00408021		move   $s0, $v0
+ 187 00c0 0C000097		jal    user_inputs_destination
+ 188 00c4 00408821		move   $s1, $v0
+ 189 00c8               remove_logic:
+ 190 00c8 02002021		move   $a0, $s0
+ 191 00cc 02202821		move   $a1, $s1
+ 192 00d0 0C000225		jal    valid_move_remove	     #remove the piece
+ 193 00d4 00409021		move   $s2, $v0
+ 194 00d8 16400001		bne    $s2, $zero, print	     #if valid remove, print board
+ 195 00dc 0800002E		j      get_input		     #else jump back to input
+ 196 00e0               	
+ 197 00e0               print:
+ 198 00e0 0C0002B0		jal    print_whole_board
+ 199 00e4 0C00018F		jal    count_moves_left
+ 200 00e8 10400001		beq    $v0, $zero, game_over 
+ 201 00ec 0800002E		j      get_input
+ 202 00f0               
+ 203 00f0               game_over:
+ 204 00f0 0C000044		jal    game_is_over 
+ 205 00f4 0800003E		j      demo_done
+ 206 00f8               demo_done:
+ 207 00f8 8FB00000		lw     $s0, 0($sp)
+ 208 00fc 8FB10004		lw     $s1, 4($sp)
+ 209 0100 8FB20008		lw     $s2, 8($sp)
+ 210 0104 8FBF000C		lw     $ra, 12($sp)
+ 211 0108 23BD0010		addi   $sp, $sp, 16
+ 212 010c 03E00008		jr     $ra 
+ 213 0110               
+ 214 0110               #
+ 215 0110               # Name:		    Game Is Over 
+ 216 0110               # Description:	    Function that prints proper messages when no
+ 217 0110               #		    more legal moves are left 
+ 218 0110               game_is_over:
+ 219 0110 23BDFFFC	    	addi   $sp, $sp, -4
+ 220 0114 AFBF0000		sw     $ra, 0($sp)
+ 221 0118               
+ 222 0118 34020004		li     $v0, PRINT_STRING
+ 223 011c 3C040000		la     $a0, no_more_legal_moves	     #Prints message 
+     0120 34840000
+ 224 0124 0000000C		syscall
+ 225 0128               
+ 226 0128 0C000018		jal    print_number_of_pegs
+ 227 012c               
+ 228 012c 8FBF0000		lw     $ra, 0($sp)
+ 229 0130 23BD0004		addi   $sp, $sp, 4
+ 230 0134 03E00008		jr     $ra 
+ 231 0138               
+ 232 0138               #
+ 233 0138               # Name:		    count_board 
+ 234 0138               # Description:	    Helper function to count number of pieces 
+ 235 0138               #		    Returns:
+ 236 0138               #		    $v0 - number of pieces left 
+ 237 0138               count_board:
+ 238 0138 23BDFFE8		addi   $sp, $sp, -24		     #save stack 
+ 239 013c AFBF0014		sw     $ra, 20($sp) 
+ 240 0140 AFB40010		sw     $s4, 16($sp)
+ 241 0144 AFB3000C		sw     $s3, 12($sp)
+ 242 0148 AFB20008		sw     $s2, 8($sp)
+ 243 014c AFB10004		sw     $s1, 4($sp)
+ 244 0150 AFB00000		sw     $s0, 0($sp)
+ 245 0154               	
+ 246 0154 3C100000		la     $s0, board_array		     #array
+     0158 36100000
+ 247 015c 34110000		li     $s1, 0			     #counter = 0 
+ 248 0160 34120031		li     $s2, 49
+ 249 0164 34080058		li     $t0, 88			     #peg piece 
+ 250 0168               
+ 251 0168               count_pieces:
+ 252 0168 12400006		beq    $s2, $zero, count_loop_done
+ 253 016c 82130000		lb     $s3, 0($s0)		     #char at first index 
+ 254 0170 16680001		bne    $s3, $t0, next_move	     #if not space, increment counter 
+ 255 0174 22310001		addi   $s1, $s1, 1		     #increment counter 
+ 256 0178               
+ 257 0178               next_move:
+ 258 0178 22100001		addi   $s0, $s0, 1		     #go to next char 
+ 259 017c 2252FFFF		addi   $s2, $s2, -1		     #decrement counter 
+ 260 0180 0800005A		j      count_pieces 
+ 261 0184               
+ 262 0184               count_loop_done:
+ 263 0184 02201021		move   $v0, $s1 
+ 264 0188               
+ 265 0188 8FB00000		lw     $s0, 0($sp)
+ 266 018c 8FB10004		lw     $s1, 4($sp)
+ 267 0190 8FB20008		lw     $s2, 8($sp)
+ 268 0194 8FB3000C		lw     $s3, 12($sp)
+ 269 0198 8FB40010		lw     $s4, 16($sp)
+ 270 019c 8FBF0014		lw     $ra, 20($sp)
+ 271 01a0 23BD0018		addi   $sp, $sp, 24
+ 272 01a4 03E00008		jr     $ra
+ 273 01a8               
+ 274 01a8               #	
+ 275 01a8               # Name:		    User Input   
+ 276 01a8               # Description:	    Prompt the user for input    
+ 277 01a8               #		    Returns:
+ 278 01a8               #		    $v0 - row
+ 279 01a8               #		    $v1 - col	     
+ 280 01a8               #
+ 281 01a8               user_inputs_peg_location:
+ 282 01a8 23BDFFE8		addi   $sp, $sp, -24 
+ 283 01ac AFBF0014		sw     $ra, 20($sp) 
+ 284 01b0 AFB40010		sw     $s4, 16($sp)
+ 285 01b4 AFB3000C		sw     $s3, 12($sp)
+ 286 01b8 AFB20008		sw     $s2, 8($sp)
+ 287 01bc AFB10004		sw     $s1, 4($sp)
+ 288 01c0 AFB00000		sw     $s0, 0($sp)
+ 289 01c4               
+ 290 01c4               input_peg:
+ 291 01c4 34020004		li     $v0, PRINT_STRING 
+ 292 01c8 3C040000		la     $a0, enter_peg_to_move_location
+     01cc 34840000
+ 293 01d0 0000000C		syscall
+ 294 01d4               
+ 295 01d4 34020005		li     $v0, READ_INT			  #reads in the integer 
+ 296 01d8 0000000C		syscall 
+ 297 01dc               
+ 298 01dc 00408021		move   $s0, $v0				  #s0 holds the input now 
+ 299 01e0 2414FFFF		li     $s4, -1 	
+ 300 01e4                   
+ 301 01e4 1214FF92		beq    $s0, $s4, player_quit_game	  #if s0 = -1 quit 
+ 302 01e8               
+ 303 01e8 02002021		move   $a0, $s0
+ 304 01ec 0C0000F6		jal    divide_to_get_rc			  #get two values 
+ 305 01f0               	
+ 306 01f0 00402021		move   $a0, $v0
+ 307 01f4 00602821		move   $a1, $v1	 
+ 308 01f8 0C0000C4		jal    is_move_on_board			  #check for on board
+ 309 01fc               
+ 310 01fc 00409821		move   $s3, $v0		
+ 311 0200 1260000A		beq    $s3, $zero, input_off_the_board	  
+ 312 0204               
+ 313 0204 02002021		move   $a0, $s0
+ 314 0208 0C0000F6		jal    divide_to_get_rc
+ 315 020c               
+ 316 020c 00402021		move   $a0, $v0
+ 317 0210 00602821		move   $a1, $v1
+ 318 0214 0C000123		jal    check_if_piece 
+ 319 0218               
+ 320 0218 00409821		move   $s3, $v0				  #s3 is a 1 or 0
+ 321 021c 34110001		li     $s1, 1				  #s1 is a 1 
+ 322 0220               
+ 323 0220 16710004		bne    $s3, $s1, is_a_space		  #check if it is a valid space, 1 or 0 
+ 324 0224 02001021		move   $v0, $s0				  #return a valid piece to move if 1
+ 325 0228 0800008F		j      user_peg_input_done		  #finish function 
+ 326 022c               
+ 327 022c               input_off_the_board:
+ 328 022c 0C000111		jal    print_not_on_board_error		  #print not on board error 
+ 329 0230 08000071		j      input_peg
+ 330 0234               
+ 331 0234               is_a_space:
+ 332 0234 0C000108		jal    print_is_a_space_error		  #if its a 0 print error, not a piece 
+ 333 0238 08000071		j      input_peg			  #ask for input again 
+ 334 023c               
+ 335 023c               user_peg_input_done:
+ 336 023c 8FB00000		lw     $s0, 0($sp)
+ 337 0240 8FB10004		lw     $s1, 4($sp)
+ 338 0244 8FB20008		lw     $s2, 8($sp)
+ 339 0248 8FB3000C		lw     $s3, 12($sp)
+ 340 024c 8FB40010		lw     $s4, 16($sp)
+ 341 0250 8FBF0014		lw     $ra, 20($sp)
+ 342 0254 23BD0018		addi   $sp, $sp, 24
+ 343 0258 03E00008		jr     $ra 
+ 344 025c               
+ 345 025c               #
+ 346 025c               # Name:		    User Destination    
+ 347 025c               # Description:	    Take input and manipulates it 
+ 348 025c               #		    Returns:     
+ 349 025c               #		    $v0 - row
+ 350 025c               #		    $v1 - col	     
+ 351 025c               #
+ 352 025c               user_inputs_destination:
+ 353 025c 23BDFFE8		addi   $sp, $sp, -24  
+ 354 0260 AFBF0014		sw     $ra, 20($sp) 
+ 355 0264 AFB40010		sw     $s4, 16($sp)
+ 356 0268 AFB3000C		sw     $s3, 12($sp)
+ 357 026c AFB20008		sw     $s2, 8($sp)
+ 358 0270 AFB10004		sw     $s1, 4($sp)
+ 359 0274 AFB00000		sw     $s0, 0($sp)
+ 360 0278               
+ 361 0278               destination_spot:
+ 362 0278 34020004		li     $v0, PRINT_STRING 
+ 363 027c 3C040000		la     $a0, enter_location_to_move_peg
+     0280 34840000
+ 364 0284 0000000C		syscall
+ 365 0288               
+ 366 0288 34020005		li     $v0, READ_INT			       #reads in the integer 
+ 367 028c 0000000C		syscall 
+ 368 0290               
+ 369 0290 00408021		move   $s0, $v0				       #s0 holds the input now 
+ 370 0294 2414FFFF		li     $s4, -1 	 
+ 371 0298                   
+ 372 0298 1214FF65		beq    $s0, $s4, player_quit_game	       #if s0 < -1 quit 
+ 373 029c               
+ 374 029c 02002021		move   $a0, $s0
+ 375 02a0 0C0000F6		jal    divide_to_get_rc
+ 376 02a4               
+ 377 02a4 00402021		move   $a0, $v0
+ 378 02a8 00602821		move   $a1, $v1
+ 379 02ac 0C0000C4		jal    is_move_on_board
+ 380 02b0               
+ 381 02b0 00409821		move   $s3, $v0		
+ 382 02b4 1260000A		beq    $s3, $zero, destination_off_the_board
+ 383 02b8               
+ 384 02b8 02002021		move   $a0, $s0
+ 385 02bc 0C0000F6		jal    divide_to_get_rc
+ 386 02c0               
+ 387 02c0 00402021		move   $a0, $v0
+ 388 02c4 00602821		move   $a1, $v1
+ 389 02c8 0C000123		jal    check_if_piece 
+ 390 02cc               
+ 391 02cc 00409821		move   $s3, $v0				       #s3 is a 1 or 0
+ 392 02d0 34110001		li     $s1, 1				       #s1 is a 1 
+ 393 02d4               
+ 394 02d4 12710004		beq    $s3, $s1, is_not_space		       #check if it is a valid space, 1 or 0 
+ 395 02d8 02001021		move   $v0, $s0				       #return a valid piece to move if 1
+ 396 02dc 080000BC		j      user_inputs_destination_end	       #finish function 
+ 397 02e0               
+ 398 02e0               destination_off_the_board:
+ 399 02e0 0C000111		jal    print_not_on_board_error
+ 400 02e4 0800009E		j      destination_spot
+ 401 02e8               
+ 402 02e8               is_not_space:
+ 403 02e8 0C00011A		jal    print_move_occupied_error	       #if its a 0 print error, not a piece 
+ 404 02ec 0800009E		j      destination_spot			       #ask for input again
+ 405 02f0               
+ 406 02f0               user_inputs_destination_end:
+ 407 02f0 8FB00000		lw     $s0, 0($sp)
+ 408 02f4 8FB10004		lw     $s1, 4($sp)
+ 409 02f8 8FB20008		lw     $s2, 8($sp)
+ 410 02fc 8FB3000C		lw     $s3, 12($sp)
+ 411 0300 8FB40010		lw     $s4, 16($sp)
+ 412 0304 8FBF0014		lw     $ra, 20($sp)
+ 413 0308 23BD0018		addi   $sp, $sp, 24
+ 414 030c 03E00008		jr     $ra 
+ 415 0310               
+ 416 0310               #
+ 417 0310               # Name:			 Is Move On Board 
+ 418 0310               # Description:		 Function to check if a move is on the board.
+ 419 0310               #			 0, if not on board, 1 if it is 
+ 420 0310               #			 Parameters:
+ 421 0310               #			 $a0 - row 
+ 422 0310               #			 $a1 - col   
+ 423 0310               #			 Returns
+ 424 0310               #			 $v0 - 0 or 1 
+ 425 0310               #
+ 426 0310               is_move_on_board:
+ 427 0310 23BDFFE8		addi   $sp, $sp, -24		     #save stack 
+ 428 0314 AFBF0014		sw     $ra, 20($sp) 
+ 429 0318 AFB40010		sw     $s4, 16($sp)
+ 430 031c AFB3000C		sw     $s3, 12($sp)
+ 431 0320 AFB20008		sw     $s2, 8($sp)
+ 432 0324 AFB10004		sw     $s1, 4($sp)
+ 433 0328 AFB00000		sw     $s0, 0($sp)
+ 434 032c               	
+ 435 032c 00808021		move   $s0, $a0			     #s1 is row 
+ 436 0330 00A08821		move   $s1, $a1			     #s2 is col
+ 437 0334               	
+ 438 0334 34130005		li     $s3, 5
+ 439 0338                   
+ 440 0338 2A120000		slti   $s2, $s0, 0		     #if row < 0, $s2 = 1 
+ 441 033c 1640001A		bne    $s2, $zero, not_on_board	     #if s2 != zero, not on board
+ 442 0340               
+ 443 0340 2A320000		slti   $s2, $s1, 0		     #if col<0, $s2 =1
+ 444 0344 16400018		bne    $s2, $zero, not_on_board	     #if $s2 != zero, not_on_board
+ 445 0348               
+ 446 0348 2A120007		slti   $s2, $s0, 7		     #if row > 7, $s2 = 0
+ 447 034c 12400016		beq    $s2, $zero, not_on_board	     #if s2 == zero, not on board
+ 448 0350               
+ 449 0350 2A320007		slti   $s2, $s1, 7		     #if col>0, $s2 = 0 
+ 450 0354 12400014		beq    $s2, $zero, not_on_board	     #if $s2 == zero, not_on_board
+ 451 0358               
+ 452 0358               top_left:
+ 453 0358               					     #if r<2 and col < 2  return 0 
+ 454 0358 2A080002		slti   $t0, $s0, 2		     #if row < 2 $t0 =1 
+ 455 035c 2A290002		slti   $t1, $s1, 2
+ 456 0360 11000002		beq    $t0, $zero, top_right	     #if either is broken, move to next check
+ 457 0364 11200001		beq    $t1, $zero, top_right	      
+ 458 0368 080000EA		j      not_on_board		     #passes both check, its not on board
+ 459 036c               
+ 460 036c               top_right:
+ 461 036c               					     #if r< 2 and col>=5  return 0 	
+ 462 036c 2A080002		slti   $t0, $s0, 2		     #if row < 2 $t0 =1
+ 463 0370 2A290005		slti   $t1, $s1, 5		     #if col > 4, $t1 = 0 
+ 464 0374 11000002		beq    $t0, $zero, bottom_left	     #if either is broken go to next check  
+ 465 0378 15200001		bne    $t1, $zero, bottom_left
+ 466 037c 080000EA		j      not_on_board		     #passes both checks, must be bad 
+ 467 0380               
+ 468 0380               bottom_left:
+ 469 0380               					     #if r>=5 and col < 2 return 0
+ 470 0380 2A080005		slti   $t0, $s0, 5		     #$t0 will have 0 if greater than 	     
+ 471 0384 2A290002		slti   $t1, $s1, 2		     #t1 will have 1 if less than 
+ 472 0388 15000002		bne    $t0, $zero, bottom_right 
+ 473 038c 11200001		beq    $t1, $zero, bottom_right  
+ 474 0390 080000EA		j      not_on_board
+ 475 0394               bottom_right:
+ 476 0394               					     #if r>=5 and col > =5 return 0 
+ 477 0394 2A080005		slti   $t0, $s0, 5		     #t0 = 0     
+ 478 0398 2A290005		slti   $t1, $s1, 5		     #t1 = 0
+ 479 039c 15000004		bne    $t0, $zero, on_board 
+ 480 03a0 15200003		bne    $t1, $zero, on_board  
+ 481 03a4 080000EA		j      not_on_board
+ 482 03a8               
+ 483 03a8               not_on_board:
+ 484 03a8 34020000		li     $v0, 0 
+ 485 03ac 080000EE		j      is_move_on_board_done
+ 486 03b0               on_board:
+ 487 03b0 34020001		li     $v0, 1 
+ 488 03b4 080000EE		j      is_move_on_board_done
+ 489 03b8               
+ 490 03b8               is_move_on_board_done: 
+ 491 03b8 8FB00000	    	lw     $s0, 0($sp)
+ 492 03bc 8FB10004		lw     $s1, 4($sp)
+ 493 03c0 8FB20008		lw     $s2, 8($sp)
+ 494 03c4 8FB3000C		lw     $s3, 12($sp)
+ 495 03c8 8FB40010		lw     $s4, 16($sp)
+ 496 03cc 8FBF0014		lw     $ra, 20($sp)
+ 497 03d0 23BD0018		addi   $sp, $sp, 24
+ 498 03d4 03E00008		jr     $ra 
+ 499 03d8               
+ 500 03d8               #
+ 501 03d8               # Name:		    Divide 
+ 502 03d8               # Description:	    Function that takes in number and divides them 
+ 503 03d8               #		    Parameters:
+ 504 03d8               #		    $a0 - number
+ 505 03d8               #		    Returns:
+ 506 03d8               #		    $v0 - row 
+ 507 03d8               #		    $v1 - col        
+ 508 03d8               #
+ 509 03d8               divide_to_get_rc:
+ 510 03d8 23BDFFF0	     	addi   $sp, $sp, -16		#save stack 
+ 511 03dc AFBF000C		sw     $ra, 12($sp) 
+ 512 03e0 AFB20008		sw     $s2, 8($sp)
+ 513 03e4 AFB10004		sw     $s1, 4($sp)
+ 514 03e8 AFB00000		sw     $s0, 0($sp)
+ 515 03ec               
+ 516 03ec 00808021		move   $s0, $a0 
+ 517 03f0 3401000A		div    $s1, $s0, 10		#divide input by 10 lo= division hi= modulo    
+     03f4 0201001A
+     03f8 00008812
+ 518 03fc 00009010		mfhi   $s2
+ 519 0400               	
+ 520 0400 02201021		move   $v0, $s1 
+ 521 0404 02401821		move   $v1, $s2 
+ 522 0408               
+ 523 0408 8FB00000	    	lw     $s0, 0($sp)
+ 524 040c 8FB10004		lw     $s1, 4($sp)
+ 525 0410 8FB20008		lw     $s2, 8($sp)
+ 526 0414 8FBF000C		lw     $ra, 12($sp)
+ 527 0418 23BD0010		addi   $sp, $sp, 16
+ 528 041c 03E00008		jr     $ra 
+ 529 0420               #
+ 530 0420               # Name:		    Print Space Error
+ 531 0420               # Description:	    Function that Prints Space Error
+ 532 0420               #
+ 533 0420               print_is_a_space_error:
+ 534 0420 23BDFFFC		addi   $sp, $sp, -4
+ 535 0424 AFBF0000		sw     $ra, 0($sp)
+ 536 0428               
+ 537 0428 34020004		li     $v0, PRINT_STRING 
+ 538 042c 3C040000		la     $a0, illegal_no_peg 
+     0430 34840000
+ 539 0434 0000000C		syscall
+ 540 0438               	
+ 541 0438 8FBF0000		lw     $ra, 0($sp)
+ 542 043c 23BD0004		addi   $sp, $sp, 4
+ 543 0440 03E00008		jr     $ra 
+ 544 0444               
+ 545 0444               #
+ 546 0444               # Name:		    Print Not On Board Error
+ 547 0444               # Description:	    Function that Prints Not On Board Error
+ 548 0444               #
+ 549 0444               print_not_on_board_error:
+ 550 0444 23BDFFFC		addi   $sp, $sp, -4
+ 551 0448 AFBF0000		sw     $ra, 0($sp)
+ 552 044c               
+ 553 044c 34020004		li     $v0, PRINT_STRING 
+ 554 0450 3C040000		la     $a0, illegal_not_on_board 
+     0454 34840000
+ 555 0458 0000000C		syscall
+ 556 045c               	
+ 557 045c 8FBF0000		lw     $ra, 0($sp)
+ 558 0460 23BD0004		addi   $sp, $sp, 4
+ 559 0464 03E00008		jr     $ra 
+ 560 0468               
+ 561 0468               #
+ 562 0468               # Name:		    Print Error
+ 563 0468               # Description:	    Function that Move Occupied Error
+ 564 0468               #
+ 565 0468               print_move_occupied_error:
+ 566 0468 23BDFFFC		addi   $sp, $sp, -4
+ 567 046c AFBF0000		sw     $ra, 0($sp)
+ 568 0470               
+ 569 0470 34020004		li     $v0, PRINT_STRING 
+ 570 0474 3C040000		la     $a0, illegal_move_occupied 
+     0478 34840000
+ 571 047c 0000000C		syscall
+ 572 0480               	
+ 573 0480 8FBF0000		lw     $ra, 0($sp)
+ 574 0484 23BD0004		addi   $sp, $sp, 4
+ 575 0488 03E00008		jr     $ra 
+ 576 048c               
+ 577 048c               #
+ 578 048c               # Name:		    Check If Piece 
+ 579 048c               # Description:	    Function to check if input row col is X or not 
+ 580 048c               #		    Parameter:  
+ 581 048c               #		    a0 - row
+ 582 048c               #		    a1 - col		     
+ 583 048c               #		    Return: 
+ 584 048c               #		    v0 - 1 if good, 0 if bad	     
+ 585 048c               #
+ 586 048c               check_if_piece: 
+ 587 048c 23BDFFE8	    	addi   $sp, $sp, -24		#save stack 
+ 588 0490 AFBF0014		sw     $ra, 20($sp) 
+ 589 0494 AFB40010		sw     $s4, 16($sp)
+ 590 0498 AFB3000C		sw     $s3, 12($sp)
+ 591 049c AFB20008		sw     $s2, 8($sp)
+ 592 04a0 AFB10004		sw     $s1, 4($sp)
+ 593 04a4 AFB00000		sw     $s0, 0($sp)
+ 594 04a8               
+ 595 04a8 00808021		move   $s0, $a0			#move row from a0 to s0 
+ 596 04ac 00A08821		move   $s1, $a1			#move col from a1 to s1 
+ 597 04b0               
+ 598 04b0 00808021		move   $s0, $a0			#move row from a0 to s0 
+ 599 04b4 00A08821		move   $s1, $a1			#move col from a1 to s1 
+ 600 04b8 02002021		move   $a0, $s0		   
+ 601 04bc 02202821		move   $a1, $s1			
+ 602 04c0               
+ 603 04c0 0C000140		jal    get_from_array
+ 604 04c4 00409021		move   $s2, $v0			#get the value and store it in s2 
+ 605 04c8 34130058		li     $s3, 88			#hold peg peice 
+ 606 04cc               
+ 607 04cc 16530002		bne    $s2, $s3, not_a_piece	#if value in s2 is not a piece goto not_a_piece 
+ 608 04d0 34020001		li     $v0, 1			#else put 1 in $v0, cause it is a piece 
+ 609 04d4 08000138		j      check_if_piece_done	#finish function
+ 610 04d8               
+ 611 04d8               not_a_piece: 
+ 612 04d8 34020000		li     $v0, 0			#it is not a piece, so load a 0
+ 613 04dc 08000138		j      check_if_piece_done	#finish function 
+ 614 04e0               
+ 615 04e0               check_if_piece_done:
+ 616 04e0 8FB00000	    	lw     $s0, 0($sp)
+ 617 04e4 8FB10004		lw     $s1, 4($sp)
+ 618 04e8 8FB20008		lw     $s2, 8($sp)
+ 619 04ec 8FB3000C		lw     $s3, 12($sp)
+ 620 04f0 8FB40010		lw     $s4, 16($sp)
+ 621 04f4 8FBF0014		lw     $ra, 20($sp)
+ 622 04f8 23BD0018		addi   $sp, $sp, 24
+ 623 04fc 03E00008		jr     $ra 
+ 624 0500               
+ 625 0500               #
+ 626 0500               # Name:		    Get value from array
+ 627 0500               #		    a0 - row
+ 628 0500               #		    a1 - column	   
+ 629 0500               #		    v0 - value at the array 
+ 630 0500               #
+ 631 0500               get_from_array:
+ 632 0500 23BDFFE8	    	addi   $sp, $sp, -24		#save stack 
+ 633 0504 AFBF0014		sw     $ra, 20($sp) 
+ 634 0508 AFB40010		sw     $s4, 16($sp)
+ 635 050c AFB3000C		sw     $s3, 12($sp)
+ 636 0510 AFB20008		sw     $s2, 8($sp)
+ 637 0514 AFB10004		sw     $s1, 4($sp)
+ 638 0518 AFB00000		sw     $s0, 0($sp)
+ 639 051c                   
+ 640 051c 00809021		move   $s2, $a0			#get row and put in s2
+ 641 0520 00A09821		move   $s3, $a1			#get col and put in s3 
+ 642 0524               
+ 643 0524 3C110000		la     $s1, board_array		#put board in $s1 
+     0528 36310000
+ 644 052c                   
+ 645 052c 34100007		li     $s0, 7			#load row size
+ 646 0530 02120018		mul    $s0, $s0, $s2		#multply rowsize by row  
+     0534 00008012
+ 647 0538 02138020		add    $s0, $s0, $s3		#add col s0 = index at the array 
+ 648 053c                   
+ 649 053c 02308020		add    $s0, $s1, $s0		#add length of array and index
+ 650 0540                   
+ 651 0540 82020000		lb     $v0, 0($s0)		#value at row, column
+ 652 0544               
+ 653 0544               get_from_array_done:
+ 654 0544 8FB00000		lw     $s0, 0($sp)
+ 655 0548 8FB10004		lw     $s1, 4($sp)
+ 656 054c 8FB20008		lw     $s2, 8($sp)
+ 657 0550 8FB3000C		lw     $s3, 12($sp)
+ 658 0554 8FB40010		lw     $s4, 16($sp)
+ 659 0558 8FBF0014		lw     $ra, 20($sp)
+ 660 055c 23BD0018		addi   $sp, $sp, 24
+ 661 0560 03E00008		jr     $ra 
+ 662 0564               
+ 663 0564               #
+ 664 0564               # Name:		    Add Space 
+ 665 0564               # Description	    Function to remove a piece on the board 
+ 666 0564               #		    Parameter:
+ 667 0564               #		    a0 - row
+ 668 0564               #		    a1 - col  
+ 669 0564               #
+ 670 0564               remove_piece_from_board: 
+ 671 0564 23BDFFE8		addi   $sp, $sp, -24		#save stack 
+ 672 0568 AFBF0014		sw     $ra, 20($sp) 
+ 673 056c AFB40010		sw     $s4, 16($sp)
+ 674 0570 AFB3000C		sw     $s3, 12($sp)
+ 675 0574 AFB20008		sw     $s2, 8($sp)
+ 676 0578 AFB10004		sw     $s1, 4($sp)
+ 677 057c AFB00000		sw     $s0, 0($sp)
+ 678 0580               	 
+ 679 0580 00809021		move   $s2, $a0			#get row and put in s2
+ 680 0584 00A09821		move   $s3, $a1			#get col and put in s3 
+ 681 0588               
+ 682 0588 3C110000		la     $s1, board_array		#put board in $s1 
+     058c 36310000
+ 683 0590                   
+ 684 0590 34100007		li     $s0, 7			#load row size
+ 685 0594 02120018		mul    $s0, $s0, $s2		#multply rowsize by row  
+     0598 00008012
+ 686 059c 02138020		add    $s0, $s0, $s3		#add col s0 = index at the array 
+ 687 05a0                   
+ 688 05a0 02308020		add    $s0, $s1, $s0		#add length of array and index
+ 689 05a4                   
+ 690 05a4 82140000		lb     $s4, 0($s0)		#value at row, column
+ 691 05a8               
+ 692 05a8 2294FFC8		addi   $s4,$s4, -56		#makes the value into a space
+ 693 05ac A2140000		sb     $s4, ($s0)
+ 694 05b0               
+ 695 05b0 8FB00000		lw     $s0, 0($sp)
+ 696 05b4 8FB10004		lw     $s1, 4($sp)
+ 697 05b8 8FB20008		lw     $s2, 8($sp)
+ 698 05bc 8FB3000C		lw     $s3, 12($sp)
+ 699 05c0 8FB40010		lw     $s4, 16($sp)
+ 700 05c4 8FBF0014		lw     $ra, 20($sp)
+ 701 05c8 23BD0018		addi   $sp, $sp, 24
+ 702 05cc 03E00008		jr     $ra 
+ 703 05d0               
+ 704 05d0               # Name:		    Add Piece
+ 705 05d0               # Description:	    Function to add a piece on a blank spot
+ 706 05d0               #		    Parameters:
+ 707 05d0               #		    a0 - row
+ 708 05d0               #		    a1 - col 
+ 709 05d0               #
+ 710 05d0               add_piece_to_board: 
+ 711 05d0 23BDFFE8		addi   $sp, $sp, -24 #save stack 
+ 712 05d4 AFBF0014		sw     $ra, 20($sp) 
+ 713 05d8 AFB40010		sw     $s4, 16($sp)
+ 714 05dc AFB3000C		sw     $s3, 12($sp)
+ 715 05e0 AFB20008		sw     $s2, 8($sp)
+ 716 05e4 AFB10004		sw     $s1, 4($sp)
+ 717 05e8 AFB00000		sw     $s0, 0($sp)
+ 718 05ec               	 
+ 719 05ec 00809021		move   $s2, $a0			#get row and put in s2
+ 720 05f0 00A09821		move   $s3, $a1			#get col and put in s3 
+ 721 05f4               
+ 722 05f4 3C110000		la     $s1, board_array		#put board in $s1 
+     05f8 36310000
+ 723 05fc                   
+ 724 05fc 34100007		li     $s0, 7			#load row size
+ 725 0600 02120018		mul    $s0, $s0, $s2		#multply rowsize by row  
+     0604 00008012
+ 726 0608 02138020		add    $s0, $s0, $s3		#add col s0 = index at the array 
+ 727 060c                   
+ 728 060c 02308020		add    $s0, $s1, $s0		#add length of array and index
+ 729 0610                   
+ 730 0610 82140000		lb     $s4, 0($s0)		#value at row, column
+ 731 0614               
+ 732 0614 22940038		addi   $s4,$s4, 56		#makes the value into a space
+ 733 0618 A2140000		sb     $s4, ($s0)
+ 734 061c               
+ 735 061c 8FB00000		lw     $s0, 0($sp)
+ 736 0620 8FB10004		lw     $s1, 4($sp)
+ 737 0624 8FB20008		lw     $s2, 8($sp)
+ 738 0628 8FB3000C		lw     $s3, 12($sp)
+ 739 062c 8FB40010		lw     $s4, 16($sp)
+ 740 0630 8FBF0014		lw     $ra, 20($sp)
+ 741 0634 23BD0018		addi   $sp, $sp, 24
+ 742 0638 03E00008		jr     $ra 
+ 743 063c               
+ 744 063c               # Name:		    Count Moves
+ 745 063c               # Description:	    Function loops thru board. And check each coor
+ 746 063c               #		    $v0 - number of available moves  
+ 747 063c               #
+ 748 063c               count_moves_left:
+ 749 063c 23BDFFDC		addi   $sp, $sp, -36			  #save stack 
+ 750 0640 AFBF0020		sw     $ra, 32($sp) 
+ 751 0644 AFB7001C		sw     $s7, 28($sp)
+ 752 0648 AFB60018		sw     $s6, 24($sp)
+ 753 064c AFB50014		sw     $s5, 20($sp)
+ 754 0650 AFB40010		sw     $s4, 16($sp)
+ 755 0654 AFB3000C		sw     $s3, 12($sp)
+ 756 0658 AFB20008		sw     $s2, 8($sp)
+ 757 065c AFB10004		sw     $s1, 4($sp)
+ 758 0660 AFB00000		sw     $s0, 0($sp)
+ 759 0664               	
+ 760 0664 34100000		li     $s0, 0
+ 761 0668 34110042		li     $s1, 66
+ 762 066c 34120000		li     $s2, 0				  #counter 
+ 763 0670               	
+ 764 0670               go_thru_board_coor_loop:
+ 765 0670 1211000B		beq    $s0, $s1, count_moves_left_done 
+ 766 0674               
+ 767 0674 02002021		move   $a0, $s0 
+ 768 0678 0C0000F6		jal    divide_to_get_rc
+ 769 067c 00402021		move   $a0, $v0
+ 770 0680 00602821		move   $a1, $v1 
+ 771 0684 0C0001B4		jal    does_coor_have_move		  #0 is coordinate has no moves , 1 if it does 
+ 772 0688 14400002		bne    $v0, $zero, add_counter
+ 773 068c 22100001		addi   $s0, $s0, 1
+ 774 0690 0800019C		j      go_thru_board_coor_loop
+ 775 0694               add_counter: 
+ 776 0694 22520001		addi   $s2, $s2, 1 
+ 777 0698 22100001		addi   $s0, $s0, 1 
+ 778 069c 0800019C		j      go_thru_board_coor_loop
+ 779 06a0               	
+ 780 06a0               count_moves_left_done: 
+ 781 06a0 02401021		move   $v0, $s2 
+ 782 06a4               	
+ 783 06a4 8FB00000		lw     $s0, 0($sp)
+ 784 06a8 8FB10004		lw     $s1, 4($sp)
+ 785 06ac 8FB20008		lw     $s2, 8($sp)
+ 786 06b0 8FB3000C		lw     $s3, 12($sp)
+ 787 06b4 8FB40010		lw     $s4, 16($sp)
+ 788 06b8 8FB50014	    	lw     $s5, 20($sp)
+ 789 06bc 8FB60018		lw     $s6, 24($sp)
+ 790 06c0 8FB7001C		lw     $s7, 28($sp)
+ 791 06c4 8FBF0020		lw     $ra, 32($sp)
+ 792 06c8 23BD0024		addi   $sp, $sp, 36
+ 793 06cc 03E00008		jr     $ra 
+ 794 06d0               
+ 795 06d0               #
+ 796 06d0               # Name:		    Does Coor Have Move 
+ 797 06d0               # Description:	    Function takes in coordinates              
+ 798 06d0               #		    sees if the coordinate has any valid moves 
+ 799 06d0               #		    Parameters:
+ 800 06d0               #		    a0 - row 
+ 801 06d0               #		    a1- col
+ 802 06d0               #		    Return:
+ 803 06d0               #		    v0- 0 if no valid moves 
+ 804 06d0               #
+ 805 06d0               does_coor_have_move:
+ 806 06d0 23BDFFDC		addi   $sp, $sp, -36 #save stack 
+ 807 06d4 AFBF0020		sw     $ra, 32($sp) 
+ 808 06d8 AFB7001C		sw     $s7, 28($sp)
+ 809 06dc AFB60018		sw     $s6, 24($sp)
+ 810 06e0 AFB50014		sw     $s5, 20($sp)
+ 811 06e4 AFB40010		sw     $s4, 16($sp)
+ 812 06e8 AFB3000C		sw     $s3, 12($sp)
+ 813 06ec AFB20008		sw     $s2, 8($sp)
+ 814 06f0 AFB10004		sw     $s1, 4($sp)
+ 815 06f4 AFB00000		sw     $s0, 0($sp)
+ 816 06f8               
+ 817 06f8 00808821		move   $s1, $a0
+ 818 06fc 00A09021		move   $s2, $a1 
+ 819 0700 0C000123		jal    check_if_piece 			  #if its a space return 0
+ 820 0704 10400054		beq    $v0, $zero, fail_all_checks
+ 821 0708               	
+ 822 0708               valid_left_moves:
+ 823 0708 02209821		move   $s3, $s1				  #s3 = same row 
+ 824 070c 2254FFFF		addi   $s4, $s2, -1			  #s5 = hold the value to the left of peg 
+ 825 0710               	
+ 826 0710 0220A821		move   $s5, $s1
+ 827 0714 2256FFFE		addi   $s6, $s2, -2			  #get piece two units left of peg
+ 828 0718               
+ 829 0718 02602021		move   $a0, $s3
+ 830 071c 02802821		move   $a1, $s4
+ 831 0720 0C0000C4		jal    is_move_on_board			  #check if piece to the left is on board or not 
+ 832 0724 1040000D		beq    $v0, $zero, valid_right_moves	  #if off board, check other moves
+ 833 0728               	
+ 834 0728 02A02021		move   $a0, $s5
+ 835 072c 02C02821		move   $a1, $s6
+ 836 0730 0C0000C4		jal    is_move_on_board			  #check if piece 2 units is on board or not 
+ 837 0734 10400009		beq    $v0, $zero, valid_right_moves 
+ 838 0738               	
+ 839 0738 02602021	    	move   $a0, $s3
+ 840 073c 02802821		move   $a1, $s4
+ 841 0740 0C000123		jal    check_if_piece		      
+ 842 0744 10400005		beq    $v0, $zero, valid_right_moves	  #if left piece is x and 2nd piece is space, its valid 
+ 843 0748               	
+ 844 0748 02A02021		move   $a0, $s5				  
+ 845 074c 02C02821		move   $a1, $s6
+ 846 0750 0C000123		jal    check_if_piece		      
+ 847 0754 14400001		bne    $v0, $zero, valid_right_moves 
+ 848 0758               
+ 849 0758 08000218		j      has_valid_move 
+ 850 075c               
+ 851 075c               valid_right_moves: 
+ 852 075c 02209821		move   $s3, $s1				  #s3 = same row 
+ 853 0760 22540001		addi   $s4, $s2, +1			  #s5 = hold the value to the right of peg 
+ 854 0764               	
+ 855 0764 0220A821		move   $s5, $s1
+ 856 0768 22560002		addi   $s6, $s2, +2			  #get piece two units right of peg
+ 857 076c               
+ 858 076c 02602021		move   $a0, $s3
+ 859 0770 02802821		move   $a1, $s4
+ 860 0774 0C0000C4		jal    is_move_on_board			  #check if piece to the right is on board or not 
+ 861 0778 1040000D		beq    $v0, $zero, valid_up_moves	  #if off board, check other moves
+ 862 077c               	
+ 863 077c 02A02021		move   $a0, $s5
+ 864 0780 02C02821		move   $a1, $s6
+ 865 0784 0C0000C4		jal    is_move_on_board			  #check if piece 2 units is on board or not 
+ 866 0788 10400009		beq    $v0, $zero, valid_up_moves 
+ 867 078c               	
+ 868 078c               	#if right piece is x and 2nd piece is space, its valid 
+ 869 078c 02602021	    	move   $a0, $s3
+ 870 0790 02802821		move   $a1, $s4
+ 871 0794 0C000123		jal    check_if_piece		      
+ 872 0798 10400005		beq    $v0, $zero, valid_up_moves	     
+ 873 079c               	
+ 874 079c 02A02021		move   $a0, $s5				  
+ 875 07a0 02C02821		move   $a1, $s6
+ 876 07a4 0C000123		jal    check_if_piece		      
+ 877 07a8 14400001		bne    $v0, $zero, valid_up_moves 
+ 878 07ac               
+ 879 07ac 08000218		j      has_valid_move 
+ 880 07b0               
+ 881 07b0               valid_up_moves:
+ 882 07b0 2233FFFF		addi   $s3, $s1, -1 
+ 883 07b4 0240A021		move   $s4, $s2 
+ 884 07b8               
+ 885 07b8 2235FFFE		addi   $s5, $s1, -2
+ 886 07bc 0240B021		move   $s6, $s2
+ 887 07c0               
+ 888 07c0 02602021	    	move   $a0, $s3
+ 889 07c4 02802821		move   $a1, $s4
+ 890 07c8 0C0000C4		jal    is_move_on_board			  #check if piece to the right is on board or not 
+ 891 07cc 1040000D		beq    $v0, $zero, valid_down_moves	  #if off board, check other moves
+ 892 07d0               	
+ 893 07d0 02A02021		move   $a0, $s5
+ 894 07d4 02C02821		move   $a1, $s6
+ 895 07d8 0C0000C4		jal    is_move_on_board			  #check if piece 2 units is on board or not 
+ 896 07dc 10400009		beq    $v0, $zero, valid_down_moves 
+ 897 07e0               	
+ 898 07e0               	#if up piece is x and 2nd piece is space, its valid 
+ 899 07e0 02602021	    	move   $a0, $s3
+ 900 07e4 02802821		move   $a1, $s4
+ 901 07e8 0C000123		jal    check_if_piece		      
+ 902 07ec 10400005		beq    $v0, $zero, valid_down_moves	     
+ 903 07f0               	
+ 904 07f0 02A02021		move   $a0, $s5				  
+ 905 07f4 02C02821		move   $a1, $s6
+ 906 07f8 0C000123		jal    check_if_piece		      
+ 907 07fc 14400001		bne    $v0, $zero, valid_down_moves 
+ 908 0800               
+ 909 0800 08000218		j      has_valid_move 
+ 910 0804               
+ 911 0804               valid_down_moves: 
+ 912 0804 22330001		addi   $s3, $s1, +1 
+ 913 0808 0240A021		move   $s4, $s2 
+ 914 080c               
+ 915 080c 22350002		addi   $s5, $s1, +2
+ 916 0810 0240B021		move   $s6, $s2
+ 917 0814               
+ 918 0814 02602021	    	move   $a0, $s3
+ 919 0818 02802821		move   $a1, $s4
+ 920 081c 0C0000C4		jal    is_move_on_board			  #check if piece to the right is on board or not 
+ 921 0820 1040000D		beq    $v0, $zero, fail_all_checks	  #if off board, check other moves
+ 922 0824               	
+ 923 0824 02A02021		move   $a0, $s5
+ 924 0828 02C02821		move   $a1, $s6
+ 925 082c 0C0000C4		jal    is_move_on_board			  #check if piece 2 units is on board or not 
+ 926 0830 10400009		beq    $v0, $zero, fail_all_checks 
+ 927 0834               	
+ 928 0834               	#if up piece is x and 2nd piece is space, its valid 
+ 929 0834 02602021	    	move   $a0, $s3
+ 930 0838 02802821		move   $a1, $s4
+ 931 083c 0C000123		jal    check_if_piece		      
+ 932 0840 10400005		beq    $v0, $zero, fail_all_checks	     
+ 933 0844               	
+ 934 0844 02A02021		move   $a0, $s5				  
+ 935 0848 02C02821		move   $a1, $s6
+ 936 084c 0C000123		jal    check_if_piece		      
+ 937 0850 14400001		bne    $v0, $zero, fail_all_checks
+ 938 0854               
+ 939 0854 08000218		j      has_valid_move 
+ 940 0858               
+ 941 0858               fail_all_checks:
+ 942 0858 34020000		li     $v0, 0
+ 943 085c 0800021A		j      does_coor_have_move_done
+ 944 0860               
+ 945 0860               has_valid_move:
+ 946 0860 34020001		li     $v0, 1 
+ 947 0864 0800021A		j      does_coor_have_move_done
+ 948 0868               
+ 949 0868               does_coor_have_move_done:
+ 950 0868 8FB00000		lw     $s0, 0($sp)
+ 951 086c 8FB10004		lw     $s1, 4($sp)
+ 952 0870 8FB20008		lw     $s2, 8($sp)
+ 953 0874 8FB3000C		lw     $s3, 12($sp)
+ 954 0878 8FB40010		lw     $s4, 16($sp)
+ 955 087c 8FB50014	    	lw     $s5, 20($sp)
+ 956 0880 8FB60018		lw     $s6, 24($sp)
+ 957 0884 8FB7001C		lw     $s7, 28($sp)
+ 958 0888 8FBF0020		lw     $ra, 32($sp)
+ 959 088c 23BD0024		addi   $sp, $sp, 36
+ 960 0890 03E00008		jr     $ra 
+ 961 0894               
+ 962 0894               #
+ 963 0894               # Name:		    Remove Logic
+ 964 0894               # Description:	    Function to take in a peg input and a destination
+ 965 0894               #		    and do proper game logic and remove piece 
+ 966 0894               #		    and add a piece.
+ 967 0894               #		    Paramter:
+ 968 0894               #		    a0 - input 
+ 969 0894               #		    a1 - destination 
+ 970 0894               #		    Return
+ 971 0894               #		    v0 - 0 if bad move, 1 if good move  
+ 972 0894               #
+ 973 0894               valid_move_remove:
+ 974 0894 23BDFFDC		addi   $sp, $sp, -36 
+ 975 0898 AFBF0020		sw     $ra, 32($sp) 
+ 976 089c AFB7001C		sw     $s7, 28($sp)
+ 977 08a0 AFB60018		sw     $s6, 24($sp)
+ 978 08a4 AFB50014		sw     $s5, 20($sp)
+ 979 08a8 AFB40010		sw     $s4, 16($sp)
+ 980 08ac AFB3000C		sw     $s3, 12($sp)
+ 981 08b0 AFB20008		sw     $s2, 8($sp)
+ 982 08b4 AFB10004		sw     $s1, 4($sp)
+ 983 08b8 AFB00000		sw     $s0, 0($sp)
+ 984 08bc               
+ 985 08bc 00808021		move   $s0, $a0	 
+ 986 08c0 02002021		move   $a0, $s0 
+ 987 08c4 0C0000F6		jal    divide_to_get_rc
+ 988 08c8 00408021		move   $s0, $v0				  #s0 holds the row of input peg
+ 989 08cc 00608821		move   $s1, $v1				  #s1 holds the col of the input peg
+ 990 08d0               
+ 991 08d0 00A02021		move   $a0, $a1 
+ 992 08d4 0C0000F6		jal    divide_to_get_rc 
+ 993 08d8 00409021		move   $s2, $v0				  #s2 holds the destination row
+ 994 08dc 00609821		move   $s3, $v1				  #s3 holds the desitination col 
+ 995 08e0               	
+ 996 08e0               check_up:
+ 997 08e0 16330016		bne    $s1, $s3, check_right
+ 998 08e4               
+ 999 08e4 34080002		li     $t0, 2 
+1000 08e8 0212B822		sub    $s7, $s0, $s2			  #s7 has to be 2, ir - cr 
+1001 08ec 16E80008		bne    $s7, $t0, check_down	
+1002 08f0 2214FFFF		addi   $s4, $s0, -1			  #inputrow -1 to get top piace 
+1003 08f4 0220A821		move   $s5, $s1				  #same col will be used 
+1004 08f8               
+1005 08f8 02802021		move   $a0, $s4
+1006 08fc 02A02821		move   $a1, $s5 
+1007 0900 0C000123		jal    check_if_piece			  #see if r,c is a piece or not 
+1008 0904 0040B021		move   $s6, $v0				  #value at middle of input and dest
+1009 0908               
+1010 0908 12C0002A		beq    $s6, $zero, cant_jump_space	  #if $s6 =0, its not a piece, its space 
+1011 090c 08000273		j      jump_good			  #do jump manipulation if it passes all checks 
+1012 0910               
+1013 0910               check_down:
+1014 0910 34080002		li     $t0, 2 
+1015 0914 0250B822		sub    $s7, $s2, $s0			  #s7 = cr-ir 
+1016 0918 16E80008		bne    $s7, $t0, check_right	
+1017 091c 22140001		addi   $s4, $s0, 1			  #inputrow +1 to get bottom (middle row) 
+1018 0920 0220A821		move   $s5, $s1				  #same col will be used 
+1019 0924               
+1020 0924 02802021		move   $a0, $s4
+1021 0928 02A02821		move   $a1, $s5 
+1022 092c 0C000123		jal    check_if_piece			  #see if r,c is a piece or not 
+1023 0930 0040B021		move   $s6, $v0				  #value at middle of input and dest
+1024 0934               
+1025 0934 12C0001F		beq    $s6, $zero, cant_jump_space	  #if $s6 =0, its not a piece, its space 
+1026 0938 08000273		j      jump_good			  #do jump manipulation if it passes all checks
+1027 093c               
+1028 093c               check_right:
+1029 093c 16120017		bne    $s0, $s2, cant_jump	
+1030 0940 34080002		li     $t0, 2 
+1031 0944 0271B822		sub    $s7, $s3, $s1			  #s7 = dc-ic
+1032 0948               						  # if s7 is not 2 there are more pieces in between 
+1033 0948 16E80008		bne    $s7, $t0, check_left	
+1034 094c 0200A021		move   $s4, $s0				  #input row is the same 
+1035 0950 22350001		addi   $s5, $s1, 1			  #input col + 1 
+1036 0954               
+1037 0954 02802021		move   $a0, $s4
+1038 0958 02A02821		move   $a1, $s5 
+1039 095c 0C000123		jal    check_if_piece			  #see if r,c is a piece or not 
+1040 0960 0040B021		move   $s6, $v0				  #value at middle of input and dest
+1041 0964               
+1042 0964 12C00013		beq    $s6, $zero, cant_jump_space	  #if $s6 =0, its not a piece, its space 
+1043 0968 08000273		j      jump_good			  #do jump manipulation if it passes all checks
+1044 096c               
+1045 096c               check_left: 
+1046 096c 1612000B		bne    $s0, $s2, cant_jump		  #fails all other tests 
+1047 0970 34080002		li     $t0, 2 
+1048 0974 0233B822		sub    $s7, $s1, $s3			  #s7 = dc-ic
+1049 0978 16E80008		bne    $s7, $t0, cant_jump		  # if s7 is not 2 there are more pieces in between 
+1050 097c               
+1051 097c 0200A021		move   $s4, $s0				  #input row is the same 
+1052 0980 2235FFFF		addi   $s5, $s1, -1			  #input col - 1 = mid col 
+1053 0984               
+1054 0984 02802021		move   $a0, $s4
+1055 0988 02A02821		move   $a1, $s5			
+1056 098c 0C000123		jal    check_if_piece			  #see if r,c is a piece or not 
+1057 0990 0040B021		move   $s6, $v0				  #value at middle of input and dest
+1058 0994               
+1059 0994 12C00007		beq    $s6, $zero, cant_jump_space	  #if $s6 =0, its not a piece, its space 
+1060 0998 08000273		j      jump_good			  #do jump manipulation if it passes all checks
+1061 099c               
+1062 099c               cant_jump: 
+1063 099c 3C040000		la     $a0, illegal_move_jump_only_one_peg
+     09a0 34840000
+1064 09a4 34020004		li     $v0, PRINT_STRING
+1065 09a8 0000000C		syscall 
+1066 09ac               
+1067 09ac 34020000		li     $v0, 0 
+1068 09b0 0800027E		j      valid_move_remove_done 
+1069 09b4               
+1070 09b4               cant_jump_space:
+1071 09b4 3C040000		la     $a0, illegal_move_no_middle_peg
+     09b8 34840000
+1072 09bc 34020004		li     $v0, PRINT_STRING 
+1073 09c0 0000000C		syscall	    
+1074 09c4 34020000		li     $v0, 0 
+1075 09c8 0800027E		j      valid_move_remove_done 
+1076 09cc               
+1077 09cc               jump_good:
+1078 09cc 02002021		move   $a0, $s0				  #remove input peg
+1079 09d0 02202821		move   $a1, $s1 
+1080 09d4 0C000159		jal    remove_piece_from_board
+1081 09d8               
+1082 09d8 02402021		move   $a0, $s2				  #make piece into an X
+1083 09dc 02602821		move   $a1, $s3 
+1084 09e0 0C000174		jal    add_piece_to_board
+1085 09e4               
+1086 09e4 02802021		move   $a0, $s4				  #remove middle peg 
+1087 09e8 02A02821		move   $a1, $s5
+1088 09ec 0C000159		jal    remove_piece_from_board 
+1089 09f0 34020001		li     $v0, 1
+1090 09f4 0800027E		j      valid_move_remove_done 
+1091 09f8               
+1092 09f8               valid_move_remove_done:
+1093 09f8 8FB00000		lw     $s0, 0($sp)
+1094 09fc 8FB10004		lw     $s1, 4($sp)
+1095 0a00 8FB20008		lw     $s2, 8($sp)
+1096 0a04 8FB3000C		lw     $s3, 12($sp)
+1097 0a08 8FB40010		lw     $s4, 16($sp)
+1098 0a0c 8FB50014	    	lw     $s5, 20($sp)
+1099 0a10 8FB60018		lw     $s6, 24($sp)
+1100 0a14 8FB7001C		lw     $s7, 28($sp)
+1101 0a18 8FBF0020		lw     $ra, 32($sp)
+1102 0a1c 23BD0024		addi   $sp, $sp, 36
+1103 0a20 03E00008		jr     $ra 
+1104 0a24               
+1105 0a24               #
+1106 0a24               # Name:		    Print Desired Size of Board  
+1107 0a24               # Description:	    Helper function that takes in a row, col, size
+1108 0a24               #		    Will print desired length from board
+1109 0a24               #		    Parameter:
+1110 0a24               #		    a0 - row
+1111 0a24               #		    a1 - col
+1112 0a24               #		    a2 - size   
+1113 0a24               #
+1114 0a24               print_desired_size: 
+1115 0a24 23BDFFE8		addi   $sp, $sp, -24			  #save stack 
+1116 0a28 AFBF0014		sw     $ra, 20($sp) 
+1117 0a2c AFB40010		sw     $s4, 16($sp)
+1118 0a30 AFB3000C		sw     $s3, 12($sp)
+1119 0a34 AFB20008		sw     $s2, 8($sp)
+1120 0a38 AFB10004		sw     $s1, 4($sp)
+1121 0a3c AFB00000		sw     $s0, 0($sp)
+1122 0a40               
+1123 0a40               						  #s3 will hold char from array 
+1124 0a40 00808021		move   $s0, $a0				  #get the row 
+1125 0a44 00A08821		move   $s1, $a1				  #get col into s1
+1126 0a48 00C09021		move   $s2, $a2				  #get size into s2 
+1127 0a4c               board_loop_size:
+1128 0a4c 10120014		beq    $zero, $s2, end_print_desired	  #if s2 == zero go to end
+1129 0a50               
+1130 0a50 02002021		move   $a0, $s0
+1131 0a54 02202821		move   $a1, $s1
+1132 0a58 0C000140		jal    get_from_array			  #a0 and a1 is already the row and col 
+1133 0a5c 00409821		move   $s3, $v0				  #v0 holds the value at row col from array 
+1134 0a60                   
+1135 0a60 34020004		li     $v0, PRINT_STRING		  #print the space before the char 
+1136 0a64 3C040000		la     $a0, empty_piece 
+     0a68 34840000
+1137 0a6c 0000000C		syscall 
+1138 0a70               
+1139 0a70 3402000B		li     $v0, PRINT_CHAR			  #system call code for print char
+1140 0a74 02602021		move   $a0, $s3				  #print the char at the row col
+1141 0a78 0000000C		syscall 
+1142 0a7c               
+1143 0a7c 34020004		li     $v0, PRINT_STRING		  #print the space after the char
+1144 0a80 3C040000		la     $a0, empty_piece 
+     0a84 34840000
+1145 0a88 0000000C		syscall 
+1146 0a8c               
+1147 0a8c 22310001		addi   $s1, $s1, 1			  #increment column
+1148 0a90 02002021		move   $a0, $s0 
+1149 0a94 02202821		move   $a1, $s1
+1150 0a98 2252FFFF		addi   $s2, $s2, -1			  #decrement size 
+1151 0a9c 08000293		j      board_loop_size			  #jump to begin of the loop 
+1152 0aa0               
+1153 0aa0               end_print_desired:
+1154 0aa0 8FB00000		lw     $s0, 0($sp)
+1155 0aa4 8FB10004		lw     $s1, 4($sp)
+1156 0aa8 8FB20008		lw     $s2, 8($sp)
+1157 0aac 8FB3000C		lw     $s3, 12($sp)
+1158 0ab0 8FB40010		lw     $s4, 16($sp)
+1159 0ab4 8FBF0014		lw     $ra, 20($sp)
+1160 0ab8 23BD0018		addi   $sp, $sp, 24
+1161 0abc 03E00008		jr     $ra 
+1162 0ac0               
+1163 0ac0               #
+1164 0ac0               # Name:		    Print Board 
+1165 0ac0               # Description:	    Prints the whole board 
+1166 0ac0               #
+1167 0ac0               print_whole_board:
+1168 0ac0 23BDFFF8		addi   $sp, $sp, -8		#save stack 
+1169 0ac4 AFBF0004		sw     $ra, 4($sp) 
+1170 0ac8 AFB00000		sw     $s0, 0($sp)
+1171 0acc               
+1172 0acc 34020004		li     $v0, PRINT_STRING 
+1173 0ad0 3C040000		la     $a0, new_line
+     0ad4 34840000
+1174 0ad8 0000000C		syscall
+1175 0adc               
+1176 0adc 34020004		li     $v0, PRINT_STRING 
+1177 0ae0 3C040000		la     $a0, board_top_row 
+     0ae4 34840000
+1178 0ae8 0000000C		syscall
+1179 0aec               
+1180 0aec 34020004		li     $v0, PRINT_STRING 
+1181 0af0 3C040000		la     $a0, top_wall
+     0af4 34840000
+1182 0af8 0000000C		syscall 
+1183 0afc               
+1184 0afc 34020004		li     $v0, PRINT_STRING 
+1185 0b00 3C040000		la     $a0, begin_row_0
+     0b04 34840000
+1186 0b08 0000000C		syscall
+1187 0b0c               	
+1188 0b0c 34040000		li     $a0, 0			#set the row to send in 
+1189 0b10 34050002		li     $a1, 2			#set the coloumn to send in 
+1190 0b14 34060003		li     $a2, 3			#set the size to loop till 
+1191 0b18 0C000289		jal    print_desired_size	#print desired length  
+1192 0b1c               
+1193 0b1c 34020004		li     $v0, PRINT_STRING
+1194 0b20 3C040000		la     $a0, end_row
+     0b24 34840000
+1195 0b28 0000000C		syscall
+1196 0b2c               
+1197 0b2c 34020004		li     $v0, PRINT_STRING 
+1198 0b30 3C040000		la     $a0, begin_row_1 
+     0b34 34840000
+1199 0b38 0000000C		syscall
+1200 0b3c               
+1201 0b3c 34040001		li     $a0, 1 
+1202 0b40 34050002		li     $a1, 2
+1203 0b44 34060003		li     $a2, 3 
+1204 0b48 0C000289		jal    print_desired_size
+1205 0b4c               	
+1206 0b4c 34020004		li     $v0, PRINT_STRING
+1207 0b50 3C040000		la     $a0, end_wall_row
+     0b54 34840000
+1208 0b58 0000000C		syscall
+1209 0b5c               
+1210 0b5c 34020004		li     $v0, PRINT_STRING 
+1211 0b60 3C040000		la     $a0, begin_row_2 
+     0b64 34840000
+1212 0b68 0000000C		syscall 
+1213 0b6c               
+1214 0b6c 34040002		li     $a0, 2
+1215 0b70 34050000		li     $a1, 0
+1216 0b74 34060007		li     $a2, 7
+1217 0b78 0C000289		jal    print_desired_size
+1218 0b7c               
+1219 0b7c 34020004		li     $v0, PRINT_STRING 
+1220 0b80 3C040000		la     $a0, end_row 
+     0b84 34840000
+1221 0b88 0000000C		syscall
+1222 0b8c               
+1223 0b8c 34020004		li     $v0, PRINT_STRING 
+1224 0b90 3C040000		la     $a0, begin_row_3 
+     0b94 34840000
+1225 0b98 0000000C		syscall 
+1226 0b9c               
+1227 0b9c 34040003		li     $a0, 3
+1228 0ba0 34050000		li     $a1, 0
+1229 0ba4 34060007		li     $a2, 7
+1230 0ba8 0C000289		jal    print_desired_size
+1231 0bac               
+1232 0bac 34020004		li     $v0, PRINT_STRING 
+1233 0bb0 3C040000		la     $a0, end_row 
+     0bb4 34840000
+1234 0bb8 0000000C		syscall
+1235 0bbc               
+1236 0bbc 34020004		li     $v0, PRINT_STRING 
+1237 0bc0 3C040000		la     $a0, begin_row_4 
+     0bc4 34840000
+1238 0bc8 0000000C		syscall 
+1239 0bcc               
+1240 0bcc 34040004		li     $a0, 4
+1241 0bd0 34050000		li     $a1, 0
+1242 0bd4 34060007		li     $a2, 7
+1243 0bd8 0C000289		jal    print_desired_size
+1244 0bdc               
+1245 0bdc 34020004		li     $v0, PRINT_STRING 
+1246 0be0 3C040000		la     $a0, end_row 
+     0be4 34840000
+1247 0be8 0000000C		syscall
+1248 0bec               
+1249 0bec 34020004		li     $v0, PRINT_STRING 
+1250 0bf0 3C040000		la     $a0, begin_row_5 
+     0bf4 34840000
+1251 0bf8 0000000C		syscall 
+1252 0bfc               
+1253 0bfc 34040005		li     $a0, 5
+1254 0c00 34050002		li     $a1, 2
+1255 0c04 34060003		li     $a2, 3
+1256 0c08 0C000289		jal    print_desired_size
+1257 0c0c               
+1258 0c0c 34020004		li     $v0, PRINT_STRING 
+1259 0c10 3C040000		la     $a0, end_wall_row 
+     0c14 34840000
+1260 0c18 0000000C		syscall
+1261 0c1c               
+1262 0c1c 34020004		li     $v0, PRINT_STRING 
+1263 0c20 3C040000		la     $a0, begin_row_6
+     0c24 34840000
+1264 0c28 0000000C		syscall
+1265 0c2c               	
+1266 0c2c 34040006		li     $a0, 6			#set the row to send in 
+1267 0c30 34050002		li     $a1, 2			#set the coloumn to send in 
+1268 0c34 34060003		li     $a2, 3			#set the size to loop till 
+1269 0c38 0C000289		jal    print_desired_size	#print desired length  
+1270 0c3c               
+1271 0c3c 34020004		li     $v0, PRINT_STRING
+1272 0c40 3C040000		la     $a0, end_row
+     0c44 34840000
+1273 0c48 0000000C		syscall
+1274 0c4c               	
+1275 0c4c 34020004		li     $v0, PRINT_STRING 
+1276 0c50 3C040000		la     $a0, top_wall
+     0c54 34840000
+1277 0c58 0000000C		syscall
+1278 0c5c               
+1279 0c5c 8FB00000	    	lw     $s0, 0($sp)
+1280 0c60 8FBF0004		lw     $ra, 4($sp)
+1281 0c64 23BD0008		addi   $sp, $sp, 8
+1282 0c68 03E00008		jr     $ra 
+
+
+END_PROGRAM                     = 0000000A   
+PRINT_CHAR                      = 0000000B   
+PRINT_INT                       = 00000001   
+PRINT_STRING                    = 00000004   
+READ_INT                        = 00000005   
+add_counter                       00000694 R  text 
+add_piece_to_board                000005D0 R  text 
+begin_row_0                       000000C0 R  data 
+begin_row_1                       000000CA R  data 
+begin_row_2                       000000D4 R  data 
+begin_row_3                       000000D8 R  data 
+begin_row_4                       000000DC R  data 
+begin_row_5                       000000E0 R  data 
+begin_row_6                       000000EA R  data 
+board_array                       00000000 R  data 
+board_loop_size                   00000A4C R  text 
+board_top_row                     0000008F R  data 
+bottom_left                       00000380 R  text 
+bottom_right                      00000394 R  text 
+cant_jump                         0000099C R  text 
+cant_jump_space                   000009B4 R  text 
+check_down                        00000910 R  text 
+check_if_piece                    0000048C R  text 
+check_if_piece_done               000004E0 R  text 
+check_left                        0000096C R  text 
+check_right                       0000093C R  text 
+check_up                          000008E0 R  text 
+count_board                       00000138 R  text 
+count_loop_done                   00000184 R  text 
+count_moves_left                  0000063C R  text 
+count_moves_left_done             000006A0 R  text 
+count_pieces                      00000168 R  text 
+demo_done                         000000F8 R  text 
+destination_off_the_board         000002E0 R  text 
+destination_spot                  00000278 R  text 
+divide_to_get_rc                  000003D8 R  text 
+does_coor_have_move               000006D0 R  text 
+does_coor_have_move_done          00000868 R  text 
+empty_piece                       00000035 R  data 
+end_print_desired                 00000AA0 R  text 
+end_row                           000000F4 R  data 
+end_wall_row                      000000F7 R  data 
+enter_location_to_move_peg        00000146 R  data 
+enter_peg_to_move_location        0000010D R  data 
+fail_all_checks                   00000858 R  text 
+forbiden_piece                    00000031 R  data 
+game_is_over                      00000110 R  text 
+game_over                         000000F0 R  text 
+get_from_array                    00000500 R  text 
+get_from_array_done               00000544 R  text 
+get_input                         000000B8 R  text 
+go_thru_board_coor_loop           00000670 R  text 
+has_valid_move                    00000860 R  text 
+illegal_move_jump_only_one_peg    000001F5 R  data 
+illegal_move_no_middle_peg        0000022F R  data 
+illegal_move_occupied             000001C4 R  data 
+illegal_no_peg                    0000019A R  data 
+illegal_not_on_board              00000187 R  data 
+input_off_the_board               0000022C R  text 
+input_peg                         000001C4 R  text 
+is_a_space                        00000234 R  text 
+is_move_on_board                  00000310 R  text 
+is_move_on_board_done             000003B8 R  text 
+is_not_space                      000002E8 R  text 
+jump_good                         000009CC R  text 
+main                              00000000 RG text 
+new_line                          00000038 R  data 
+next_move                         00000178 R  text 
+no_more_legal_moves               00000288 R  data 
+not_a_piece                       000004D8 R  text 
+not_on_board                      000003A8 R  text 
+on_board                          000003B0 R  text 
+peg_pieces                        00000033 R  data 
+pegs_on_board_left                00000273 R  data 
+play_game                         000000A4 R  text 
+player_quit_game                  00000030 R  text 
+player_quit_message               00000100 R  data 
+print                             000000E0 R  text 
+print_desired_size                00000A24 R  text 
+print_is_a_space_error            00000420 R  text 
+print_move_occupied_error         00000468 R  text 
+print_not_on_board_error          00000444 R  text 
+print_number_of_pegs              00000060 R  text 
+print_whole_board                 00000AC0 R  text 
+real_empty_space                  00000037 R  data 
+remove_logic                      000000C8 R  text 
+remove_piece_from_board           00000564 R  text 
+top_left                          00000358 R  text 
+top_right                         0000036C R  text 
+top_wall                          000000AB R  data 
+user_inputs_destination           0000025C R  text 
+user_inputs_destination_end       000002F0 R  text 
+user_inputs_peg_location          000001A8 R  text 
+user_peg_input_done               0000023C R  text 
+valid_down_moves                  00000804 R  text 
+valid_left_moves                  00000708 R  text 
+valid_move_remove                 00000894 R  text 
+valid_move_remove_done            000009F8 R  text 
+valid_right_moves                 0000075C R  text 
+valid_up_moves                    000007B0 R  text 
+welcome_banner                    0000003A R  data 
+you_have                          00000268 R  data 

@@ -1,0 +1,117 @@
+Load map
+========
+
+Module:  peg_puzzle.obj
+ Text segment:  3180 bytes, load point 0x00400000
+ Data segment:  680 bytes, load point 0x10000000
+ Symbols:
+                            Name Section Mode    Value
+             no_more_legal_moves   Data   R   0x10000288
+                      check_left   Text   R   0x0040096c
+                       top_right   Text   R   0x0040036c
+                     bottom_left   Text   R   0x00400380
+               print_whole_board   Text   R   0x00400ac0
+                 cant_jump_space   Text   R   0x004009b4
+                      peg_pieces   Data   R   0x10000033
+             input_off_the_board   Text   R   0x0040022c
+                        check_up   Text   R   0x004008e0
+                       demo_done   Text   R   0x004000f8
+                  illegal_no_peg   Data   R   0x1000019a
+      enter_peg_to_move_location   Data   R   0x1000010d
+                    not_on_board   Text   R   0x004003a8
+                     END_PROGRAM          A   0x0000000a
+                   board_top_row   Data   R   0x1000008f
+                     board_array   Data   R   0x10000000
+        does_coor_have_move_done   Text   R   0x00400868
+       destination_off_the_board   Text   R   0x004002e0
+             get_from_array_done   Text   R   0x00400544
+         remove_piece_from_board   Text   R   0x00400564
+                    game_is_over   Text   R   0x00400110
+                valid_down_moves   Text   R   0x00400804
+                    count_pieces   Text   R   0x00400168
+                    is_not_space   Text   R   0x004002e8
+                     not_a_piece   Text   R   0x004004d8
+                destination_spot   Text   R   0x00400278
+        user_inputs_peg_location   Text   R   0x004001a8
+                        READ_INT          A   0x00000005
+  illegal_move_jump_only_one_peg   Data   R   0x100001f5
+                         end_row   Data   R   0x100000f4
+                  welcome_banner   Data   R   0x1000003a
+                count_moves_left   Text   R   0x0040063c
+          valid_move_remove_done   Text   R   0x004009f8
+              add_piece_to_board   Text   R   0x004005d0
+                       next_move   Text   R   0x00400178
+                        top_left   Text   R   0x00400358
+                        new_line   Data   R   0x10000038
+                        top_wall   Data   R   0x100000ab
+                 board_loop_size   Text   R   0x00400a4c
+                           print   Text   R   0x004000e0
+                       get_input   Text   R   0x004000b8
+                  has_valid_move   Text   R   0x00400860
+            print_number_of_pegs   Text   R   0x00400060
+      illegal_move_no_middle_peg   Data   R   0x1000022f
+         go_thru_board_coor_loop   Text   R   0x00400670
+                  valid_up_moves   Text   R   0x004007b0
+              print_desired_size   Text   R   0x00400a24
+       print_move_occupied_error   Text   R   0x00400468
+                divide_to_get_rc   Text   R   0x004003d8
+                    bottom_right   Text   R   0x00400394
+                       jump_good   Text   R   0x004009cc
+             user_peg_input_done   Text   R   0x0040023c
+                is_move_on_board   Text   R   0x00400310
+                     begin_row_0   Data   R   0x100000c0
+           count_moves_left_done   Text   R   0x004006a0
+                     begin_row_1   Data   R   0x100000ca
+                     begin_row_2   Data   R   0x100000d4
+                  forbiden_piece   Data   R   0x10000031
+                     begin_row_3   Data   R   0x100000d8
+                     begin_row_4   Data   R   0x100000dc
+                     begin_row_5   Data   R   0x100000e0
+                     begin_row_6   Data   R   0x100000ea
+                       game_over   Text   R   0x004000f0
+                valid_left_moves   Text   R   0x00400708
+                    end_wall_row   Data   R   0x100000f7
+                      is_a_space   Text   R   0x00400234
+          print_is_a_space_error   Text   R   0x00400420
+                 fail_all_checks   Text   R   0x00400858
+                    PRINT_STRING          A   0x00000004
+                     empty_piece   Data   R   0x10000035
+                        you_have   Data   R   0x10000268
+                       input_peg   Text   R   0x004001c4
+                            main   Text   RG  0x00400000
+      enter_location_to_move_peg   Data   R   0x10000146
+                  get_from_array   Text   R   0x00400500
+                real_empty_space   Data   R   0x10000037
+                     check_right   Text   R   0x0040093c
+     user_inputs_destination_end   Text   R   0x004002f0
+                        on_board   Text   R   0x004003b0
+                  check_if_piece   Text   R   0x0040048c
+            illegal_not_on_board   Data   R   0x10000187
+        print_not_on_board_error   Text   R   0x00400444
+                     add_counter   Text   R   0x00400694
+               valid_right_moves   Text   R   0x0040075c
+                player_quit_game   Text   R   0x00400030
+             check_if_piece_done   Text   R   0x004004e0
+             does_coor_have_move   Text   R   0x004006d0
+              pegs_on_board_left   Data   R   0x10000273
+           is_move_on_board_done   Text   R   0x004003b8
+                     count_board   Text   R   0x00400138
+             player_quit_message   Data   R   0x10000100
+               valid_move_remove   Text   R   0x00400894
+                       cant_jump   Text   R   0x0040099c
+           illegal_move_occupied   Data   R   0x100001c4
+                      check_down   Text   R   0x00400910
+                 count_loop_done   Text   R   0x00400184
+         user_inputs_destination   Text   R   0x0040025c
+                       play_game   Text   R   0x004000a4
+                    remove_logic   Text   R   0x004000c8
+               end_print_desired   Text   R   0x00400aa0
+                       PRINT_INT          A   0x00000001
+                      PRINT_CHAR          A   0x0000000b
+
+Module:  r2k_startup.obj
+ Text segment:  36 bytes, load point 0x00400c6c
+ Symbols:
+                            Name Section Mode    Value
+                       SYS_EXIT2          A   0x00000011
+                  __r2k__entry__   Text   RG  0x00400c70
