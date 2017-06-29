@@ -1,2 +1,2 @@
 # Assembly-PegSolitaire
-Create game of Peg Solitaire in C 
+Create game of Peg Solitaire in MIPS Assembly 
